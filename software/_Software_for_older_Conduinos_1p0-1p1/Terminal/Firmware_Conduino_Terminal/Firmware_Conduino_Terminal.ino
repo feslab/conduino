@@ -157,7 +157,7 @@ void loop()
 // control register map (D10 to D9)
 // ranges = {2.0 V p-p, 200 mV p-p, 400 mV p-p, 1.0 V p-p}
 const int OUTPUT_VOLTAGE[4] = {
-     B00, B01, B10, B11 
+  B00, B01, B10, B11
 };
 
 // control register map (D11, D8 to D0)
@@ -518,31 +518,23 @@ void setChannel(int num)
 switch (num) {
 
   case 1:
-//  digitalWrite(mux0, HIGH); // for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, HIGH); // for Conduino 1.0 or 1.1
-  digitalWrite(mux0, LOW);// for Conduino 1.2
-  digitalWrite(mux1, LOW);// for Conduino 1.2
+  digitalWrite(mux0, HIGH);
+  digitalWrite(mux1, HIGH);
   break;
 
   case 2:
-//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, HIGH);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, HIGH);// for Conduino 1.2
-  digitalWrite(mux1, LOW);// for Conduino 1.2
+  digitalWrite(mux0, LOW);
+  digitalWrite(mux1, HIGH);
   break;
 
   case 3:
-//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, LOW);// for Conduino 1.2
-  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  digitalWrite(mux0, LOW);
+  digitalWrite(mux1, LOW);
   break;
 
   case 4:
-//  digitalWrite(mux0, HIGH);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, HIGH);// for Conduino 1.2
-  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  digitalWrite(mux0, HIGH);
+  digitalWrite(mux1, LOW);
   break;
 
 }

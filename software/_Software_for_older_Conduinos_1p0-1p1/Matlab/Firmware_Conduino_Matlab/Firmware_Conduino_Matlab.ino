@@ -100,7 +100,6 @@ void setup()
 void loop()
 {
       y = 2;
-      Serial.print("Specify number of samples:    ");
       Serial.setTimeout(10);
       
           while (y == 2) {
@@ -108,13 +107,8 @@ void loop()
               if (Serial.available()) {
                 y = 1;
                number = Serial.parseInt();
-               Serial.println(number);
               }
            }
-          
-      Serial.println("Start reading..............");
-      Serial.println(" ");
-      Serial.println("  Ch1               Ch2               Ch3               Ch4  ");
       digitalWrite(ledPin, HIGH);
       delay(10);
 
@@ -157,7 +151,7 @@ void loop()
 // control register map (D10 to D9)
 // ranges = {2.0 V p-p, 200 mV p-p, 400 mV p-p, 1.0 V p-p}
 const int OUTPUT_VOLTAGE[4] = {
-     B00, B01, B10, B11 
+  B00, B01, B10, B11
 };
 
 // control register map (D11, D8 to D0)
@@ -382,6 +376,7 @@ void measureImpedance() {
         double magnitude = sqrt(pow(double(real), 2) + pow(double(imag), 2));
         double gain = 2.3 * pow(10, -10); //calibrated with 220kOhm resistor on 1/3/12
     
+//        double impedance = 1 / (3.5*gain * magnitude * 45400 / 1.63);
         double impedance = 1 / (gain * magnitude * 45400 / 1.63);
     
         double phase = atan(double(imag) / double(real)) * 360 / (2 * 3.14) + 47;
@@ -390,8 +385,7 @@ void measureImpedance() {
     
     
         //Serial.print("Conductivity: ");
-        Serial.print(conductivity, 4);
-        Serial.print("            ");
+        Serial.println(conductivity, 4);
     
     
         //  double limit = analogRead(A0);
@@ -408,7 +402,6 @@ void measureImpedance() {
 
 
   }
-  Serial.println(" ");
   }
 
 
@@ -518,31 +511,31 @@ void setChannel(int num)
 switch (num) {
 
   case 1:
-//  digitalWrite(mux0, HIGH); // for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, HIGH); // for Conduino 1.0 or 1.1
-  digitalWrite(mux0, LOW);// for Conduino 1.2
-  digitalWrite(mux1, LOW);// for Conduino 1.2
+  digitalWrite(mux0, HIGH); // for Conduino 1.0 or 1.1
+  digitalWrite(mux1, HIGH); // for Conduino 1.0 or 1.1
+//  digitalWrite(mux0, LOW);// for Conduino 1.2
+//  digitalWrite(mux1, LOW);// for Conduino 1.2
   break;
 
   case 2:
-//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, HIGH);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, HIGH);// for Conduino 1.2
-  digitalWrite(mux1, LOW);// for Conduino 1.2
+  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
+  digitalWrite(mux1, HIGH);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux0, HIGH);// for Conduino 1.2
+//  digitalWrite(mux1, LOW);// for Conduino 1.2
   break;
 
   case 3:
-//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, LOW);// for Conduino 1.2
-  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
+  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux0, LOW);// for Conduino 1.2
+//  digitalWrite(mux1, HIGH);// for Conduino 1.2
   break;
 
   case 4:
-//  digitalWrite(mux0, HIGH);// for Conduino 1.0 or 1.1
-//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
-  digitalWrite(mux0, HIGH);// for Conduino 1.2
-  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  digitalWrite(mux0, HIGH);// for Conduino 1.0 or 1.1
+  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux0, HIGH);// for Conduino 1.2
+//  digitalWrite(mux1, HIGH);// for Conduino 1.2
   break;
 
 }

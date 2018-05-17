@@ -5,7 +5,7 @@
 #define AD5933_ADDR 0x0D
 #define AD5245_ADDR 0x2D //B0101101; // << assumes AD0 tied to VCC
 
-const float CLOCK_SPEED = 16.776*pow(10,6); // AD5933 has internal clock of 16.776 MHz
+const float CLOCK_SPEED = 16.776 * pow(10, 6); // AD5933 has internal clock of 16.776 MHz
 
 const int CONTROL_REGISTER[2] =                    { 0x80, 0x81       }; // see mapping below
 const int START_FREQUENCY_REGISTER[3] =            { 0x82, 0x83, 0x84 }; // 24 bits for start frequency
@@ -38,20 +38,18 @@ const int frequencySweepComplete =       4;
 //functions declarations
 int checkStatus();
 boolean measureTemperature();
-byte frequencyCode(float,int);
+byte frequencyCode(float, int);
 boolean setStartFrequency(float);
-boolean setFrequencyIncrement(float); 
+boolean setFrequencyIncrement(float);
 boolean setNumberOfIncrements(int);
 boolean setNumberOfSettlingTimes(int);
 void measureImpedance();
-void configureAD5933(int,float,float,int);
+void configureAD5933(int, float, float, int);
 int getByte(int);
-boolean setByte(int,int);
+boolean setByte(int, int);
 boolean setControlRegister(int);
-void setChannel1();
-void setChannel2();
-void setChannel3();
-void setChannel4();
+void setChannel(int);
+
 boolean setControlRegister2();
 
 
@@ -59,11 +57,14 @@ const int ledPin = 13;
 
 int reading = 0;
 byte rxByte;
-
+int number;
 char FirstChar[1];
 char SecondChar[1];
 
-int e=0;
+int e = 0;
+int y;
+int ch;
+int u;
 
 // Arduino setup:
 
@@ -76,61 +77,46 @@ const int mux0 = 9;
 
 int channelNumber = 0;
 
-void setup() 
+void setup()
 {
   Wire.begin();
   Serial.begin(115200);
 
   pinMode(ledPin, OUTPUT);
-  
+
   pinMode(mux1, OUTPUT);
   pinMode(mux0, OUTPUT);
-  
-    
-  configureAD5933(10, // number of settling times
-                    1*pow(10,5), // start frequency (Hz)
-                    1*pow(10,4), // frequency increment (Hz)
-                    0); // number of increments
 
- setControlRegister2();
-                    
+
+  configureAD5933(2, // number of settling times
+                  1 * pow(10, 5), // start frequency (Hz)
+                  1 * pow(10, 4), // frequency increment (Hz)
+                  0); // number of increments
+
+  setControlRegister2();
+
 }
 
-void loop() 
-{  
-  int x=0;
+void loop()
+{
+      y = 2;
+      Serial.setTimeout(10);
+      
+          while (y == 2) {
 
-  while(x==0) {
-   if (Serial.available()) {
-    Serial.readBytes(FirstChar,1);
-    x=1;
-       switch (FirstChar[0]){
+              if (Serial.available()) {
+                y = 1;
+               number = Serial.parseInt();
+              }
+           }
+      digitalWrite(ledPin, HIGH);
+      delay(10);
 
-           case '1':
-              setChannel1();
-              break;
-           case '2':
-              setChannel2();
-              break;
-           case '3':
-              setChannel3();
-              break;
-           case '4':
-              setChannel4();
-              break;
-        }  
-    digitalWrite(ledPin, HIGH);        
+      measureImpedance();
 
-    delay(100);
-     
-    measureImpedance();
-
-    digitalWrite(ledPin, LOW);  
-    delay(1000);
-  } 
-  }
-  x=0;
-  }
+      digitalWrite(ledPin, LOW);
+      delay(1000);
+}
 
 
 
@@ -165,7 +151,8 @@ void loop()
 // control register map (D10 to D9)
 // ranges = {2.0 V p-p, 200 mV p-p, 400 mV p-p, 1.0 V p-p}
 const int OUTPUT_VOLTAGE[4] = {
-  B00, B01, B10, B11};
+  B00, B01, B10, B11
+};
 
 // control register map (D11, D8 to D0)
 // D11 = no operation
@@ -202,31 +189,31 @@ int checkStatus() {
 }
 
 boolean measureTemperature() {
-  
-   setControlRegister(MEASURE_TEMP);
+
+  setControlRegister(MEASURE_TEMP);
 
   delay(10); // wait for 10 ms
 
-  if (checkStatus() &1 == validTemperatureMeasurement) {
+  if (checkStatus() & 1 == validTemperatureMeasurement) {
 
     // temperature is available
     int temperatureData = getByte(TEMPERATURE_DATA_REGISTER[0]) << 8;
     temperatureData |= getByte(TEMPERATURE_DATA_REGISTER[1]);
     temperatureData &= 0x3FFF; // remove first two bits
-    
+
     if (temperatureData & 0x2000 == 1) { // negative temperature
-      
+
       temperatureData -= 0x4000;
     }
-    
+
     temperatureData /= 32;
-    
+
     Serial.print("Current temperature is ");
-    Serial.print(temperatureData); 
+    Serial.print(temperatureData);
     Serial.println(" degrees Celsius.");
-    
+
     setControlRegister(POWER_DOWN);
-    
+
     return true;
 
   } else {
@@ -235,9 +222,9 @@ boolean measureTemperature() {
 }
 
 // start frequency and frequency increment formula:
-byte frequencyCode(float freqInHz, int byteNum) 
+byte frequencyCode(float freqInHz, int byteNum)
 {
-  long value = long((freqInHz / (CLOCK_SPEED / 4)) * pow(2,27));
+  long value = long((freqInHz / (CLOCK_SPEED / 4)) * pow(2, 27));
 
   byte code[3];
 
@@ -248,7 +235,7 @@ byte frequencyCode(float freqInHz, int byteNum)
   return code[byteNum];
 }
 
-boolean setStartFrequency(float freqInHz) 
+boolean setStartFrequency(float freqInHz)
 {
 
 
@@ -256,7 +243,7 @@ boolean setStartFrequency(float freqInHz)
   boolean statusValue;
 
   for (int n = 0; n < 3; n++) {
-    statusValue = setByte(START_FREQUENCY_REGISTER[n], frequencyCode(freqInHz,n));
+    statusValue = setByte(START_FREQUENCY_REGISTER[n], frequencyCode(freqInHz, n));
   }
 
   return statusValue;
@@ -264,14 +251,14 @@ boolean setStartFrequency(float freqInHz)
 }
 
 
-boolean setFrequencyIncrement(float freqInHz) 
+boolean setFrequencyIncrement(float freqInHz)
 {
 
 
   boolean statusValue;
 
   for (int n = 0; n < 3; n++) {
-    statusValue = setByte(FREQ_INCREMENT_REGISTER[n], frequencyCode(freqInHz,n));
+    statusValue = setByte(FREQ_INCREMENT_REGISTER[n], frequencyCode(freqInHz, n));
   }
 
   return statusValue;
@@ -279,14 +266,14 @@ boolean setFrequencyIncrement(float freqInHz)
 }
 
 
-boolean setNumberOfIncrements(int n) 
+boolean setNumberOfIncrements(int n)
 {
 
 
-  boolean i2cStatus; 
+  boolean i2cStatus;
 
-  int numIncrements = min(n,511);
-  
+  int numIncrements = min(n, 511);
+
   i2cStatus = setByte(NUM_INCREMENTS_REGISTER[0], numIncrements >> 8);
   i2cStatus = setByte(NUM_INCREMENTS_REGISTER[1], numIncrements & 255);
 
@@ -294,7 +281,7 @@ boolean setNumberOfIncrements(int n)
 }
 
 
-boolean setNumberOfSettlingTimes(int n) 
+boolean setNumberOfSettlingTimes(int n)
 {
 
 
@@ -305,21 +292,21 @@ boolean setNumberOfSettlingTimes(int n)
   if (n > 1023) {
     decode = 3;
     numSettlingTimes /= 4;
-  } 
+  }
   else if (n > 511) {
     decode = 1;
     numSettlingTimes /= 2;
-  } 
+  }
   else {
     decode = 0;
     numSettlingTimes = n;
-  } 
+  }
 
-  boolean i2cStatus; 
-  
+  boolean i2cStatus;
+
   i2cStatus = setByte(NUM_SETTLING_CYCLES_REGISTER[0], (numSettlingTimes >> 8) + (decode << 1));
   i2cStatus = setByte(NUM_SETTLING_CYCLES_REGISTER[0], numSettlingTimes & 255);
-  
+
   return i2cStatus;
 
 }
@@ -329,109 +316,105 @@ boolean setNumberOfSettlingTimes(int n)
 void measureImpedance() {
 
 
-int real=0;
-int imag=0;
-e=0;
+  int real = 0;
+  int imag = 0;
+  e = 0;
   //0.Inizialize bit D11,D10,D9,D8
-   setControlRegister2();
- 
-   // 1. place AD5933 in standby mode
+  setControlRegister2();
+
+  // 1. place AD5933 in standby mode
   setControlRegister(STANDBY);
-  
+
   // 2. initialize with start frequency
   setControlRegister(INITIALIZE);
- 
+
+
   // 3. start frequency sweep
   setControlRegister(START_SWEEP);
 
   int rxcontrol = getByte(CONTROL_REGISTER[0]);
 
-  
+      real = getByte(REAL_DATA_REGISTER[0]) << 8;
+      real |= getByte(REAL_DATA_REGISTER[1]);
+    
+        imag = getByte(IMAG_DATA_REGISTER[0]) << 8;
+        imag |= getByte(IMAG_DATA_REGISTER[1]);
+    
+
   // start array:
 
-  
-  while (1) { // if status is 4 or higher, the sweep is complete
- 
+
+
   // 4. poll status register until complete
-   //while (checkStatus() < validImpedanceData) {
-   //}
-   for(int u=0;u<20;u++) {
-     delay(1); // delay seems to determine the minimum frequency that can be used for an accurate measurement
-           // examples (for settling times = 1000)
-           // 1 ms:
-           // 2 ms:
-           // 5 ms:
-           // 10 ms:
-           // 100 ms:
-           // 200 ms:
-           // 500 ms: 2000 Hz
-           // 1000 ms: 2000 Hz
- 
-  // 5. read values
-   real = getByte(REAL_DATA_REGISTER[0]) << 8;
-   real |= getByte(REAL_DATA_REGISTER[1]);
-   
-   if (real > 0x7FFF) { // negative value
-     real &= 0x7FFF;
-     real -= 0x10000;
-   }
-   
-   imag = getByte(IMAG_DATA_REGISTER[0]) << 8;
-   imag |= getByte(IMAG_DATA_REGISTER[1]); 
-   
-   if (imag > 0x7FFF) { // negative value
-     imag &= 0x7FFF;
-     imag -= 0x10000;
-   }
-   
-   double magnitude = sqrt(pow(double(real),2) + pow(double(imag),2));
-   double gain = 2.3 * pow(10, -10); //calibrated with 220kOhm resistor on 1/3/12
-   
-   double impedance = 1/(gain*magnitude*45400/1.63);
-   
-   double phase = atan(double(imag)/double(real))*360/(2*3.14)+47;
+  //while (checkStatus() < validImpedanceData) {
+  //}
+  for (u = 0; u < number; u++) { 
+    
+    for ( ch=1; ch < 5 ; ch++) {
 
-   double conductivity = 129/impedance;
-   
+      setChannel(ch);
+    setControlRegister(REPEAT);
+      delay(6);
 
-   //Serial.print("Conductivity: ");  
-   Serial.println(conductivity,5);
- 
+      // 5. read values
+      real = getByte(REAL_DATA_REGISTER[0]) << 8;
+      real |= getByte(REAL_DATA_REGISTER[1]);
 
- //  double limit = analogRead(A0); 
-//   limit *=5;
-//   limit /=1023;
-//   Serial.print(limit);
-//   Serial.print(" V ");
-//   Serial.println("; ... ");
+        if (real > 0x7FFF) { // negative value
+          real &= 0x7FFF;
+          real -= 0x10000;
+        }
+    
+        imag = getByte(IMAG_DATA_REGISTER[0]) << 8;
+        imag |= getByte(IMAG_DATA_REGISTER[1]);
+    
+        if (imag > 0x7FFF) { // negative value
+          imag &= 0x7FFF;
+          imag -= 0x10000;
+        }
+    
+        double magnitude = sqrt(pow(double(real), 2) + pow(double(imag), 2));
+        double gain = 2.3 * pow(10, -10); //calibrated with 220kOhm resistor on 1/3/12
+    
+//        double impedance = 1 / (3.5*gain * magnitude * 45400 / 1.63);
+        double impedance = 1 / (gain * magnitude * 45400 / 1.63);
+    
+        double phase = atan(double(imag) / double(real)) * 360 / (2 * 3.14) + 47;
+    
+        double conductivity = 129 / impedance;
+    
+    
+        //Serial.print("Conductivity: ");
+        Serial.println(conductivity, 4);
+    
+    
+        //  double limit = analogRead(A0);
+        //   limit *=5;
+        //   limit /=1023;
+        //   Serial.print(limit);
+        //   Serial.print(" V ");
+        //   Serial.println("; ... ");
+    
+    
+    
+    
+        //Serial.println(" ");
 
-  
 
-
-//Serial.println(" ");
-   setControlRegister(REPEAT);
-   }
-   
-if (Serial.available()) {
-  
-    Serial.readBytes(SecondChar,1);
-    if (SecondChar[0]=='S'){
-        e=1;}
+  }
   }
 
- if (e==1) break;
-  }
-  
 
- 
-  // 8. power-down mode 
+
+
+  // 8. power-down mode
   setControlRegister(POWER_DOWN);
-  
-  
+
+
 }
 
 
-void configureAD5933(int settlingTimes, float startFreq, float freqIncr, int numIncr) 
+void configureAD5933(int settlingTimes, float startFreq, float freqIncr, int numIncr)
 {
   setNumberOfSettlingTimes(settlingTimes);
   setStartFrequency(startFreq);
@@ -468,7 +451,7 @@ int getByte(int address) {
 
   if (1 <= Wire.available()) {
     rxByte = Wire.read();
-  } 
+  }
   else {
     rxByte = -1;
   }
@@ -487,69 +470,73 @@ boolean setByte(int address, int value) {
   if (i2cStatus)
     return false;
   else
-    return true; 
+    return true;
 
 }
 
 boolean setControlRegister(int code) {
- 
+
   int rxByte = getByte(CONTROL_REGISTER[0]);
 
   rxByte &= 0x0F; // clear upper four bits
   rxByte |= code << 4; // set to 1011
 
   boolean s = setByte(CONTROL_REGISTER[0], rxByte);
-  
-  delay(10); 
-  
+
+  delay(1);
+
+
   return s;
-  
+
 }
 
 boolean setControlRegister2() {
- 
+
   int rxByte = getByte(CONTROL_REGISTER[0]);
 
   rxByte &= 0xF0; // clear lower four bits
   rxByte |= B00000011; // set to 0011
 
   boolean s = setByte(CONTROL_REGISTER[0], rxByte);
-  
-  delay(10); 
-  
+
+  delay(10);
+
   return s;
-  
-}
-
-
-void setChannel1()
-{
-
-    digitalWrite(mux0,HIGH);
-    digitalWrite(mux1,HIGH);
 
 }
 
-void setChannel2()
-{
 
-    digitalWrite(mux0,LOW);
-    digitalWrite(mux1,HIGH);
+void setChannel(int num)
+{
+switch (num) {
+
+  case 1:
+//  digitalWrite(mux0, HIGH); // for Conduino 1.0 or 1.1
+//  digitalWrite(mux1, HIGH); // for Conduino 1.0 or 1.1
+  digitalWrite(mux0, LOW);// for Conduino 1.2
+  digitalWrite(mux1, LOW);// for Conduino 1.2
+  break;
+
+  case 2:
+//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux1, HIGH);// for Conduino 1.0 or 1.1
+  digitalWrite(mux0, HIGH);// for Conduino 1.2
+  digitalWrite(mux1, LOW);// for Conduino 1.2
+  break;
+
+  case 3:
+//  digitalWrite(mux0, LOW);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
+  digitalWrite(mux0, LOW);// for Conduino 1.2
+  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  break;
+
+  case 4:
+//  digitalWrite(mux0, HIGH);// for Conduino 1.0 or 1.1
+//  digitalWrite(mux1, LOW);// for Conduino 1.0 or 1.1
+  digitalWrite(mux0, HIGH);// for Conduino 1.2
+  digitalWrite(mux1, HIGH);// for Conduino 1.2
+  break;
 
 }
-
-void setChannel3()
-{
-
-    digitalWrite(mux0,LOW);
-    digitalWrite(mux1,LOW);
-
-}
-
-void setChannel4()
-{
-
-    digitalWrite(mux0,HIGH);
-    digitalWrite(mux1,LOW);
-
 }

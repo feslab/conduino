@@ -15,7 +15,7 @@ delete(instrfindall); % Use this if the ports get stuck
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 macORpc = 'pc'; % 'mac' or 'pc' 
-portNumber = 14; % COM port number on pc, port index on mac
+portNumber = 6; % COM port number on pc, port index on mac
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %assigns the object s to serial port
