@@ -29,6 +29,7 @@ Software:
     - Termite.exe: RS232 serial port terminal for PC, requires no installation see https://www.compuphase.com/software_termite.htm;
     - termite.cat: place in the same folder as Termite.exe;
     - Settings Termite.pdf: Settings for Termite, or similar serial port terminals.
+- _Software_for_older_Conduinos_1p0-1p1: versions for older Conduinos;
 
 
 Conduino 1.2 differs from the Conduino 1.0 described in the 2017 paper:
